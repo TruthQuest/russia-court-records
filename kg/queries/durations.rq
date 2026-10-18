@@ -1,0 +1,14 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+# Registration and decision dates for decided registrations with a card judge (days computed outside SPARQL).
+SELECT ?court ?post ?judgeEn ?reg ?political ?registered ?decided ?out
+WHERE {
+  { SELECT ?reg (MAX(IF(?n IN (POLITICAL), 1, 0)) AS ?political) WHERE { ?reg cl:courtListedArticle/skos:notation ?n } GROUP BY ?reg }
+  ?reg cl:heldAt ?court ; cl:cardJudge ?post ; cl:registeredOn ?r ; cl:decidedOn ?d ; cl:hasOutcome ?out .
+  ?post skos:prefLabel ?judgeEn .
+  BIND(STR(?r) AS ?registered) BIND(STR(?d) AS ?decided)
+}

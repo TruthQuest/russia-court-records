@@ -1,0 +1,16 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX o: <http://repressions.russia/ontology/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+# For OVD-Info cases with at least one linked registration: how many co-defendants are not yet linked to a court registration.
+SELECT ?case (COUNT(DISTINCT ?p) AS ?ovdDefendants) (COUNT(DISTINCT ?linked) AS ?linked)
+WHERE {
+  ?case cl:caseRegistration ?any .
+  ?p o:partOfCase ?case .
+  OPTIONAL { ?p cl:hasCourtRegistration ?r . BIND(?p AS ?linked) }
+}
+GROUP BY ?case
+HAVING (COUNT(DISTINCT ?p) > COUNT(DISTINCT ?linked))
+ORDER BY DESC(?ovdDefendants)

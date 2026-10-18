@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this software or its method, please cite it as below, and cite the report."
+title: "courtlink: linking Russian political prosecutions to court records, judges and sanctions lists"
+authors:
+  - family-names: Brattin
+    given-names: Eric
+    affiliation: Trace Origin LLC
+    email: ebrattin@traceoriginresearch.com
+date-released: 2026-10-18
+url: "https://www.traceoriginresearch.com/no-way-out-how-russias-courts-convict-almost-everyone-charged-for-speaking-against-the-war/"
+keywords:
+  - Russia
+  - political prosecution
+  - courts
+  - knowledge graph
+  - record linkage
+  - sanctions
+references:
+  - type: report
+    title: "No Way Out: How Russia's Courts Convict Almost Everyone Charged for Speaking Against the War"
+    authors:
+      - family-names: Brattin
+        given-names: Eric
+    publisher:
+      name: Trace Origin LLC
+    year: 2026
+    url: "https://www.traceoriginresearch.com/no-way-out-how-russias-courts-convict-almost-everyone-charged-for-speaking-against-the-war/"

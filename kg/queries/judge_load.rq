@@ -1,0 +1,23 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+# Per judicial post (judge at one court): registrations, co-registration clusters counted once, OVD-linked registrations,
+# verdicts (conviction or acquittal) and pending. The judge is the one listed on the card (presiding judge in panel courts).
+SELECT ?post ?judgeEn ?court ?courtEn ?courtType
+       (COUNT(DISTINCT ?reg) AS ?registrations)
+       (COUNT(DISTINCT COALESCE(?cl, ?reg)) AS ?clusters)
+       (COUNT(DISTINCT ?linked) AS ?ovdLinked)
+       (SUM(IF(?out = <https://traceoriginresearch.com/id/courtlink/outcome/verdict>, 1, 0)) AS ?verdicts)
+       (SUM(IF(?out = <https://traceoriginresearch.com/id/courtlink/outcome/pending>, 1, 0)) AS ?pending)
+WHERE {
+  ?reg a cl:CourtRegistration ; cl:cardJudge ?post ; cl:hasOutcome ?out .
+  ?post skos:prefLabel ?judgeEn ; org:organization ?court .
+  ?court skos:prefLabel ?courtEn ; a ?courtType . FILTER(?courtType != cl:Court)
+  OPTIONAL { ?reg cl:inCluster ?cl }
+  OPTIONAL { ?l cl:linksRegistration ?reg . BIND(?reg AS ?linked) }
+}
+GROUP BY ?post ?judgeEn ?court ?courtEn ?courtType
+ORDER BY DESC(?clusters) DESC(?registrations)

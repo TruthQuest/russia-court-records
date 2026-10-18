@@ -1,0 +1,141 @@
+@prefix cl:   <https://traceoriginresearch.com/ontology/courtlink#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix org:  <http://www.w3.org/ns/org#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix dct:  <http://purl.org/dc/terms/> .
+
+<https://traceoriginresearch.com/ontology/courtlink>
+    a owl:Ontology ;
+    rdfs:label "CourtLink: judicial layer for political-persecution records"@en ;
+    dct:creator "Trace Origin LLC" ;
+    owl:versionInfo "0.3" ;
+    rdfs:comment """Links persecution records (OVD-Info) to the registrations of criminal cases in Russian courts, the proceedings
+those registrations belong to, the courts, and the judges listed on the court's case card. Design commitments (0.3):
+ 1. Proceeding and registration are distinct. A cl:Proceeding is identified by its unified case identifier (UID), which
+    persists across transfer and re-registration. A cl:CourtRegistration is one court's registration of it under one
+    docket number. The case card is a cl:SourceDocument about a registration, not the registration itself.
+ 2. Person and post are distinct. A judge is a foaf:Person; service at a court is a cl:JudicialPost (an org:Membership)
+    with the first and last dates on which it is observed. Persons are minted per court because cross-court identity
+    cannot be established from surname and initials; candidate identities are linked with cl:possiblySameAs, never
+    owl:sameAs.
+ 3. The judge on the card is the judge the court lists for the registration (cl:cardJudge). In courts that sit in panels
+    this is the presiding or reporting judge only; the property does not claim sole decision.
+ 4. Outcomes are observations at a date (cl:outcomeAsOf) and are classified as terminal or not. "Verdict" covers
+    conviction and acquittal; the card does not distinguish them.
+ 5. Articles carry their source: cl:recordedArticle (from the persecution record) and cl:courtListedArticle (from the
+    court's listing). Decimal articles are separate concepts: no broader/narrower relation is asserted between 282.2 and
+    282, or between any article and its integer prefix.
+ 6. A cl:CoRegistrationCluster groups registrations that share court, docket year and an article and have near-consecutive
+    docket numbers. It is an inferred grouping with its rule as provenance. Whether a cluster derives from one investigation
+    is a hypothesis, not part of the class definition.
+ 7. Absence of a cl:RecordRegistrationLink means 'not linked in this dataset'. Any reading of it as 'unknown to the
+    record-keeper' is a closed-world assumption and must be stated."""@en .
+
+### Courts and places -------------------------------------------------------------------------
+cl:Court a owl:Class ; rdfs:subClassOf org:Organization ; rdfs:label "Court"@en .
+cl:DistrictCourt a owl:Class ; rdfs:subClassOf cl:Court ; rdfs:label "District or city court (district level)"@en .
+cl:RegionalCourt a owl:Class ; rdfs:subClassOf cl:Court ; rdfs:label "Regional-level court"@en ;
+    rdfs:comment "Supreme court of a republic, krai, oblast or federal-city court. May sit in panels or with a jury."@en .
+cl:MilitaryDistrictCourt a owl:Class ; rdfs:subClassOf cl:Court ; rdfs:label "District military court"@en ;
+    rdfs:comment "First instance for certain terrorism-related articles under the Criminal Procedure Code; may sit in panels."@en .
+cl:GarrisonCourt a owl:Class ; rdfs:subClassOf cl:Court ; rdfs:label "Garrison military court"@en .
+cl:MagistrateCourt a owl:Class ; rdfs:subClassOf cl:Court ; rdfs:label "Magistrate court"@en .
+[] a owl:AllDisjointClasses ; owl:members ( cl:DistrictCourt cl:RegionalCourt cl:MilitaryDistrictCourt cl:GarrisonCourt cl:MagistrateCourt ) .
+cl:Region a owl:Class ; rdfs:label "Federal subject"@en .
+
+### Proceedings and registrations -------------------------------------------------------------
+cl:Proceeding a owl:Class ; rdfs:label "Criminal proceeding (court phase)"@en ;
+    rdfs:comment "Identified by the unified case identifier (UID). Survives transfer between courts and re-registration."@en ;
+    owl:hasKey ( cl:caseUID ) .
+cl:CourtRegistration a owl:Class ; rdfs:label "Court registration of a criminal case"@en ;
+    rdfs:comment "One court's registration of a proceeding under one docket number, with what the court's card reports about it."@en .
+[] a owl:AllDisjointClasses ; owl:members ( cl:Proceeding cl:CourtRegistration cl:Court foaf:Person cl:SourceDocument ) .
+cl:CoRegistrationCluster a owl:Class ; rdfs:subClassOf prov:Entity ; rdfs:label "Co-registration cluster (inferred)"@en .
+cl:CoRegistrationRule a owl:Class ; rdfs:subClassOf prov:Plan ; rdfs:label "Co-registration rule"@en .
+
+### Judges -------------------------------------------------------------------------------------
+cl:JudicialPost a owl:Class ; rdfs:subClassOf org:Membership ; rdfs:label "Judicial post (service at a court)"@en ;
+    rdfs:comment "A person's service as judge at one court, as evidenced by case cards between cl:firstObserved and cl:lastObserved."@en .
+
+### Records and links ---------------------------------------------------------------------------
+cl:PersecutionRecord a owl:Class ; rdfs:label "Persecution record"@en ;
+    rdfs:comment "A record in an external persecution database (OVD-Info): one person within one case. Not a person; no personal data in this graph."@en .
+cl:RecordRegistrationLink a owl:Class ; rdfs:subClassOf prov:Entity ; rdfs:label "Record-to-registration link"@en ;
+    rdfs:comment "Reified assertion, produced by a matching rule, that a persecution record concerns a court registration."@en .
+cl:MatchingRule a owl:Class ; rdfs:subClassOf prov:Plan ; rdfs:label "Matching rule"@en .
+cl:SourceDocument a owl:Class ; rdfs:subClassOf prov:Entity ; rdfs:label "Fetched source page"@en .
+
+### Concept schemes ---------------------------------------------------------------------------
+cl:CriminalCodeScheme a skos:ConceptScheme ; rdfs:label "Criminal Code of the Russian Federation, articles (flat; no hierarchy)"@en .
+cl:OutcomeScheme a skos:ConceptScheme ; rdfs:label "First-instance result classes"@en .
+cl:isTerminal a owl:DatatypeProperty ; rdfs:domain skos:Concept ; rdfs:range xsd:boolean ;
+    rdfs:comment "True if the result ends the first-instance proceeding (verdict, dismissal, compulsory medical measures)."@en .
+
+### Object properties --------------------------------------------------------------------------
+cl:inRegion a owl:ObjectProperty, owl:FunctionalProperty ; rdfs:domain cl:Court ; rdfs:range cl:Region .
+cl:registrationOf a owl:ObjectProperty, owl:FunctionalProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range cl:Proceeding .
+cl:heldAt a owl:ObjectProperty, owl:FunctionalProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range cl:Court .
+cl:firstRegisteredAt a owl:ObjectProperty ; rdfs:domain cl:Proceeding ; rdfs:range cl:Court ;
+    rdfs:comment "Court whose code opens the UID."@en .
+cl:cardJudge a owl:ObjectProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range cl:JudicialPost ;
+    rdfs:comment "Judge listed on the court's card for the registration. For panel courts, the presiding or reporting judge only."@en .
+cl:possiblySameAs a owl:ObjectProperty, owl:SymmetricProperty ; rdfs:domain foaf:Person ; rdfs:range foaf:Person ;
+    rdfs:comment "Same surname and initials at another court. A lead for verification; not transitive, not owl:sameAs."@en .
+cl:mentionsArticle a owl:ObjectProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range skos:Concept .
+cl:recordedArticle a owl:ObjectProperty ; rdfs:subPropertyOf cl:mentionsArticle ;
+    rdfs:comment "Article as recorded in the linked persecution record (person level, possibly from the investigation stage)."@en .
+cl:courtListedArticle a owl:ObjectProperty ; rdfs:subPropertyOf cl:mentionsArticle ;
+    rdfs:comment "Article as listed by the court for a defendant in the registration."@en .
+cl:hasOutcome a owl:ObjectProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range skos:Concept ;
+    rdfs:comment "Result class observed on the card at cl:outcomeAsOf. Multi-defendant registrations may have per-defendant results; this records the card-level result."@en .
+cl:inCluster a owl:ObjectProperty, owl:FunctionalProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range cl:CoRegistrationCluster .
+cl:linksRecord a owl:ObjectProperty, owl:FunctionalProperty ; rdfs:domain cl:RecordRegistrationLink ; rdfs:range cl:PersecutionRecord .
+cl:linksRegistration a owl:ObjectProperty, owl:FunctionalProperty ; rdfs:domain cl:RecordRegistrationLink ; rdfs:range cl:CourtRegistration .
+cl:concernsRegistration a owl:ObjectProperty ; rdfs:domain cl:PersecutionRecord ; rdfs:range cl:CourtRegistration ;
+    owl:propertyChainAxiom ( [ owl:inverseOf cl:linksRecord ] cl:linksRegistration ) .
+cl:matchedBy a owl:ObjectProperty ; rdfs:subPropertyOf prov:wasGeneratedBy ; rdfs:domain cl:RecordRegistrationLink ; rdfs:range cl:MatchingRule .
+
+### Data properties ----------------------------------------------------------------------------
+cl:caseUID a owl:DatatypeProperty, owl:FunctionalProperty ; rdfs:domain cl:Proceeding ; rdfs:range xsd:string .
+cl:docketNumber a owl:DatatypeProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range xsd:string .
+cl:registeredOn a owl:DatatypeProperty, owl:FunctionalProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range xsd:date .
+cl:decidedOn a owl:DatatypeProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range xsd:date .
+cl:outcomeAsOf a owl:DatatypeProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range xsd:dateTime .
+cl:resultText a owl:DatatypeProperty ; rdfs:domain cl:CourtRegistration ;
+    rdfs:comment "Result text as posted by the court, in Russian (language-tagged literal; no range declared so OWL 2 reasoners without rdf:langString support stay consistent)."@en .
+cl:defendantCount a owl:DatatypeProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range xsd:nonNegativeInteger .
+# From the full case card (card_details.py): per-defendant results on the FACES tab, events on the PROGRESS tab.
+cl:convictedCount a owl:DatatypeProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range xsd:nonNegativeInteger ;
+    rdfs:comment "Defendants with a guilty verdict (обвинительный приговор) on the card's FACES tab."@en .
+cl:acquittedCount a owl:DatatypeProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range xsd:nonNegativeInteger ;
+    rdfs:comment "Defendants acquitted (оправдательный приговор)."@en .
+cl:dismissedCount a owl:DatatypeProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range xsd:nonNegativeInteger ;
+    rdfs:comment "Defendants whose case was dismissed, including dismissal with a court fine."@en .
+cl:undecidedCount a owl:DatatypeProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range xsd:nonNegativeInteger ;
+    rdfs:comment "Defendants with no result posted."@en .
+cl:hearingDays a owl:DatatypeProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range xsd:nonNegativeInteger ;
+    rdfs:comment "Distinct dates with a hearing, preliminary hearing or sentence reading."@en .
+cl:postponementCount a owl:DatatypeProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range xsd:nonNegativeInteger .
+cl:custodyDecisionCount a owl:DatatypeProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range xsd:nonNegativeInteger ;
+    rdfs:comment "Events whose name, result or basis concerns pre-trial custody or another preventive measure."@en .
+cl:custodyExtensionCount a owl:DatatypeProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range xsd:nonNegativeInteger .
+cl:minutesToJudge a owl:DatatypeProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range xsd:integer ;
+    rdfs:comment "Minutes from registration of the case to transfer of the materials to the judge, from the event times."@en .
+cl:daysToSentence a owl:DatatypeProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range xsd:integer .
+cl:singleHearingTrial a owl:DatatypeProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range xsd:boolean ;
+    rdfs:comment "Sentenced on the only hearing day."@en .
+cl:consideredBySingleJudge a owl:DatatypeProperty ; rdfs:domain cl:CourtRegistration ; rdfs:range xsd:boolean .
+cl:sudrfCode a owl:DatatypeProperty, owl:FunctionalProperty ; rdfs:domain cl:Court ; rdfs:range xsd:string .
+cl:firstObserved a owl:DatatypeProperty ; rdfs:domain cl:JudicialPost ; rdfs:range xsd:date .
+cl:lastObserved a owl:DatatypeProperty ; rdfs:domain cl:JudicialPost ; rdfs:range xsd:date .
+cl:confidence a owl:DatatypeProperty, owl:FunctionalProperty ; rdfs:domain cl:RecordRegistrationLink ; rdfs:range xsd:string .
+cl:sha256 a owl:DatatypeProperty ; rdfs:domain cl:SourceDocument ; rdfs:range xsd:string .
+cl:familyName a owl:DatatypeProperty ; rdfs:subPropertyOf foaf:familyName ; rdfs:domain foaf:Person .
+cl:initials a owl:DatatypeProperty ; rdfs:domain foaf:Person ; rdfs:range xsd:string .
+cl:passportSpelling a owl:DatatypeProperty ; rdfs:subPropertyOf skos:altLabel ;
+    rdfs:comment "ICAO 9303 romanization, for matching against sanctions lists."@en .

@@ -1,0 +1,13 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX o: <http://repressions.russia/ontology/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+# Fallback for the defined classes.
+CONSTRUCT { ?r a cl:FaciallyIncompatibleApplication . ?post a cl:PostApplyingIncompatibleArticle .
+            ?m a cl:MilitaryForumRegistration . ?i a cl:InterimResultRegistration . }
+WHERE {
+  { ?r a cl:CourtRegistration ; cl:mentionsArticle/rdf:type cl:FaciallyIncompatibleArticle . OPTIONAL { ?r cl:cardJudge ?post } }
+  UNION { ?m a cl:CourtRegistration ; cl:heldAt/rdf:type cl:MilitaryDistrictCourt }
+  UNION { ?i a cl:CourtRegistration ; cl:hasOutcome/cl:isTerminal false }
+}

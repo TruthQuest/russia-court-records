@@ -1,0 +1,14 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX o: <http://repressions.russia/ontology/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+# Fallback for the two SWRL rules. coRegisteredWith is symmetric, not transitive.
+CONSTRUCT { ?a cl:coRegisteredWith ?b . ?b cl:coRegisteredWith ?a . ?r a cl:LongPreTrialInterval . }
+WHERE {
+  { ?a cl:heldAt ?c ; cl:docketPrefix ?pf ; cl:docketYear ?y ; cl:docketSeq ?s1 ; cl:mentionsArticle ?x .
+    ?b cl:heldAt ?c ; cl:docketPrefix ?pf ; cl:docketYear ?y ; cl:docketSeq ?s2 ; cl:mentionsArticle ?x .
+    FILTER(?s2 - ?s1 > 0 && ?s2 - ?s1 <= 5) }
+  UNION { ?r cl:registrationOf ?pr ; cl:docketYear ?d . ?pr cl:uidYear ?u . FILTER(?d - ?u >= 2) }
+}

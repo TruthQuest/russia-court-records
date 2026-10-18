@@ -1,0 +1,12 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+# Judges with the same surname and initials at different courts: verify before merging.
+SELECT ?aEn ?aCourt ?bEn ?bCourt WHERE {
+  ?a cl:possiblySameAs ?b . FILTER(STR(?a) < STR(?b))
+  ?pa org:member ?a ; skos:prefLabel ?aEn ; org:organization/skos:prefLabel ?aCourt .
+  ?pb org:member ?b ; skos:prefLabel ?bEn ; org:organization/skos:prefLabel ?bCourt .
+}

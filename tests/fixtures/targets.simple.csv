@@ -1,0 +1,4 @@
+id,schema,name,aliases,birth_date,countries,addresses,identifiers,sanctions,phones,emails,dataset,first_seen,last_seen,last_change
+NK-test1,Person,Ivan Ivanovich IVANOV,Иванов Иван Иванович,1970-01-01,ru,,,Test programme: judge of a district court,,,Test list,,,
+NK-test2,Person,"IVANOV, Igor Petrovich",,,ru,,,Test programme,,,Test list,,,
+NK-test3,Person,Anna Viktorovna Sidorova,,,ru,,,Test programme,,,Test list,,,

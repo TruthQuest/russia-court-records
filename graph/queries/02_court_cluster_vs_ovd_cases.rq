@@ -1,0 +1,26 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX o: <http://repressions.russia/ontology/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+# Directly co-registered pairs (same court, docket prefix and year, docket numbers 1..5 apart, a shared article) whose
+# registrations OVD-Info records under DIFFERENT cases. Pairs only: no transitive closure, so no unbounded chains.
+# Aggregated per court and docket year.
+SELECT ?courtEn ?docketYear (COUNT(DISTINCT ?pair) AS ?pairs) (COUNT(DISTINCT ?ca) AS ?ovdCases)
+       (MIN(?start) AS ?firstStart) (MAX(?start) AS ?lastStart)
+       (GROUP_CONCAT(DISTINCT ?pair; separator=", ") AS ?dockets)
+WHERE {
+  ?a cl:coRegisteredWith ?b .
+  FILTER(STR(?a) < STR(?b))
+  ?pa cl:hasCourtRegistration ?a ; o:partOfCase ?ca1 .
+  ?pb cl:hasCourtRegistration ?b ; o:partOfCase ?ca2 .
+  FILTER(?ca1 != ?ca2)
+  ?a cl:heldAt/skos:prefLabel ?courtEn ; cl:docketYear ?docketYear ; cl:docketNumber ?da .
+  ?b cl:docketNumber ?db .
+  FILTER(LANG(?courtEn) = "en" || LANG(?courtEn) = "")
+  BIND(CONCAT(?da, " ~ ", ?db) AS ?pair)
+  VALUES ?side { 1 2 }
+  BIND(IF(?side = 1, ?ca1, ?ca2) AS ?ca)
+  OPTIONAL { ?pa o:persecutionStartDate ?s1 } OPTIONAL { ?pb o:persecutionStartDate ?s2 }
+  BIND(IF(?side = 1, ?s1, ?s2) AS ?start)
+}
+GROUP BY ?courtEn ?docketYear
+ORDER BY DESC(?pairs) ?courtEn

@@ -1,0 +1,14 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX o: <http://repressions.russia/ontology/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+# Registrations by the ICCPR character of their articles (your graph's classification) and court level.
+SELECT ?character ?level (COUNT(DISTINCT ?reg) AS ?registrations)
+WHERE {
+  ?reg cl:mentionsArticle ?art ; cl:heldAt ?court .
+  ?art a ?cls . ?cls rdfs:subClassOf cl:ClassifiedArticle . BIND(STRAFTER(STR(?cls), "#") AS ?character)
+  ?court a ?lv . FILTER(?lv IN (cl:DistrictCourt, cl:RegionalCourt, cl:MilitaryDistrictCourt)) BIND(STRAFTER(STR(?lv), "#") AS ?level)
+}
+GROUP BY ?character ?level ORDER BY ?character ?level

@@ -1,0 +1,17 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+# Closed-world over the census: registrations whose COURT-LISTED articles include a political article, by article,
+# with how many are linked to a persecution record.
+SELECT ?court ?courtEn ?art ?artEn (COUNT(DISTINCT ?reg) AS ?cases) (COUNT(DISTINCT ?linked) AS ?linkedCases) (SUM(?nd) AS ?defendants)
+WHERE {
+  ?reg a cl:CourtRegistration ; cl:heldAt ?court ; cl:courtListedArticle ?a ; cl:defendantCount ?nd .
+  ?a skos:notation ?art ; skos:prefLabel ?artEn . FILTER(?art IN (POLITICAL))
+  ?court skos:prefLabel ?courtEn .
+  OPTIONAL { ?l cl:linksRegistration ?reg . BIND(?reg AS ?linked) }
+}
+GROUP BY ?court ?courtEn ?art ?artEn
+ORDER BY DESC(?cases)

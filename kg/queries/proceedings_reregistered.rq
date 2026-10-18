@@ -1,0 +1,11 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+# Proceedings registered more than once (transfer or re-registration), and proceedings whose UID opens at another court.
+SELECT ?uid (COUNT(DISTINCT ?reg) AS ?registrations) (GROUP_CONCAT(DISTINCT ?docket; separator="; ") AS ?dockets) ?firstCourtEn
+WHERE {
+  ?reg cl:registrationOf ?p ; cl:docketNumber ?docket . ?p cl:caseUID ?uid ; cl:firstRegisteredAt/skos:prefLabel ?firstCourtEn .
+} GROUP BY ?uid ?firstCourtEn HAVING (COUNT(DISTINCT ?reg) > 1)

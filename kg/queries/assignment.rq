@@ -1,0 +1,16 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+# Input to the assignment test: every registration with its card judge, docket year, and whether the COURT lists a political article.
+# Court-listed articles only, so linked and unlinked registrations are classified on the same footing.
+SELECT ?court ?courtEn ?reg ?post ?judgeEn ?docket (MAX(?pol) AS ?political)
+WHERE {
+  ?reg a cl:CourtRegistration ; cl:heldAt ?court ; cl:cardJudge ?post ; cl:docketNumber ?docket ; cl:courtListedArticle ?art .
+  ?court skos:prefLabel ?courtEn . ?post skos:prefLabel ?judgeEn .
+  ?art skos:notation ?n .
+  BIND(IF(?n IN (POLITICAL), 1, 0) AS ?pol)
+}
+GROUP BY ?court ?courtEn ?reg ?post ?judgeEn ?docket

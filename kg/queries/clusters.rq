@@ -1,0 +1,15 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+# Co-registration clusters: registrations, card judges, articles. Whether a cluster is one investigation is not asserted.
+SELECT ?cluster ?courtEn (COUNT(DISTINCT ?reg) AS ?registrations) (COUNT(DISTINCT ?post) AS ?judges)
+       (GROUP_CONCAT(DISTINCT ?judgeEn; separator="; ") AS ?judgeNames) (GROUP_CONCAT(DISTINCT ?art; separator=";") AS ?articles)
+WHERE {
+  ?reg cl:inCluster ?cluster ; cl:heldAt/skos:prefLabel ?courtEn ; cl:mentionsArticle/skos:notation ?art .
+  OPTIONAL { ?reg cl:cardJudge ?post . ?post skos:prefLabel ?j0 }
+  BIND(COALESCE(?j0, "") AS ?judgeEn)  # rdflib cannot GROUP_CONCAT(DISTINCT) an unbound variable
+}
+GROUP BY ?cluster ?courtEn ORDER BY DESC(?registrations)

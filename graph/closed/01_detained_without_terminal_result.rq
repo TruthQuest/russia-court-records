@@ -1,0 +1,12 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX o: <http://repressions.russia/ontology/>
+# Closed-world rule, applied after inference (OWL cannot express it): a persecution OVD-Info marks as imprisoned, with
+# at least one court registration, and NO terminal result on any registration of the same case UID at any court.
+# Following the UID matters: a case transferred (interim at court A) and convicted at court B is not "waiting".
+CONSTRUCT { ?p a cl:DetainedWithoutTerminalResult }
+WHERE {
+  ?p a o:Persecution ; o:isImprisoned true ; cl:hasCourtRegistration ?r0 .
+  FILTER NOT EXISTS { ?p cl:hasCourtRegistration/cl:hasOutcome/cl:isTerminal true }
+  FILTER NOT EXISTS { ?p cl:hasCourtRegistration/cl:registrationOf ?pr .
+                      ?r2 cl:registrationOf ?pr ; cl:hasOutcome/cl:isTerminal true }
+}

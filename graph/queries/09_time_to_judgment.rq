@@ -1,0 +1,18 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX o: <http://repressions.russia/ontology/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+# Persecution start (OVD-Info) to first-instance decision (court), for terminal results, with court level.
+# Start dates on 1 January are excluded: in OVD-Info they usually stand for a year with no known day.
+# One row per registration (earliest exact start among its linked persecutions): co-defendants in one registration share
+# one decision date and are not independent observations, so counting them separately would inflate n and weight big cases.
+SELECT ?reg ?level (MIN(?start) AS ?start) ?decided (COUNT(DISTINCT ?p) AS ?defendantsLinked)
+WHERE {
+  ?p o:persecutionStartDate ?start ; cl:hasCourtRegistration ?reg .
+  ?reg cl:decidedOn ?decided ; cl:hasOutcome ?out ; cl:heldAt ?court . ?out cl:isTerminal true .
+  ?court a ?lv . FILTER(?lv IN (cl:DistrictCourt, cl:RegionalCourt, cl:MilitaryDistrictCourt)) BIND(STRAFTER(STR(?lv), "#") AS ?level)
+  FILTER(!STRENDS(STR(?start), "-01-01"))
+}
+GROUP BY ?reg ?level ?decided

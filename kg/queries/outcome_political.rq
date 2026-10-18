@@ -1,0 +1,16 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+# Per judicial post, registrations with a political article (any source): terminal results only.
+# Returned to prosecutor, transferred, joined, suspended and pending are not terminal and are excluded.
+SELECT ?post ?judgeEn ?courtEn (COUNT(DISTINCT ?reg) AS ?terminal)
+       (SUM(IF(?out = <https://traceoriginresearch.com/id/courtlink/outcome/verdict>, 1, 0)) AS ?verdicts)
+WHERE {
+  { SELECT DISTINCT ?reg WHERE { ?reg cl:mentionsArticle/skos:notation ?n . FILTER(?n IN (POLITICAL)) } }
+  ?reg cl:cardJudge ?post ; cl:hasOutcome ?out . ?out cl:isTerminal true .
+  ?post skos:prefLabel ?judgeEn ; org:organization/skos:prefLabel ?courtEn .
+}
+GROUP BY ?post ?judgeEn ?courtEn

@@ -1,0 +1,20 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX o: <http://repressions.russia/ontology/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+# Judicial posts the reasoner classed as cl:PostApplyingIncompatibleArticle, with the articles and whether decisions
+# fall after the date your graph records for the end of ECtHR jurisdiction.
+SELECT ?post ?judgeEn ?courtEn (COUNT(DISTINCT ?reg) AS ?registrations)
+       (GROUP_CONCAT(DISTINCT ?n; separator=", ") AS ?articles)
+       (COUNT(DISTINCT ?after) AS ?afterECtHR)
+WHERE {
+  ?post a cl:PostApplyingIncompatibleArticle ; skos:prefLabel ?judgeEn ; org:organization/skos:prefLabel ?courtEn .
+  ?reg cl:cardJudge ?post ; a cl:FaciallyIncompatibleApplication ; cl:mentionsArticle ?art .
+  ?art a cl:FaciallyIncompatibleArticle ; skos:notation ?n .
+  { SELECT (MIN(?c) AS ?cutoff) WHERE { ?x o:ecthrJurisdictionEnds ?c } }
+  OPTIONAL { ?reg cl:decidedOn ?d . FILTER(?d > ?cutoff) BIND(?reg AS ?after) }
+}
+GROUP BY ?post ?judgeEn ?courtEn
+ORDER BY DESC(?registrations)

@@ -1,0 +1,18 @@
+# Which SDG domains the court layer is applying articles against, by court level.
+# Needs sdg_skos_extension.ttl loaded with your graph (o:damagesSDG on rfcc articles).
+# Counts distinct registrations, judicial posts and linked persecutions per SDG and court class.
+PREFIX cl:   <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX o:    <http://repressions.russia/ontology/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?sdg ?courtLevel (COUNT(DISTINCT ?reg) AS ?registrations) (COUNT(DISTINCT ?post) AS ?posts)
+       (COUNT(DISTINCT ?pers) AS ?persecutions)
+WHERE {
+  ?reg a cl:CourtRegistration ; cl:mentionsArticle ?art ; cl:heldAt ?court .
+  ?art o:damagesSDG ?s . ?s rdfs:label ?sdg .
+  ?court a ?cls . FILTER(?cls IN (cl:DistrictCourt, cl:RegionalCourt, cl:MilitaryDistrictCourt, cl:GarrisonCourt, cl:MagistrateCourt))
+  BIND(STRAFTER(STR(?cls), "#") AS ?courtLevel)
+  OPTIONAL { ?reg cl:cardJudge ?post }
+  OPTIONAL { ?pers cl:hasCourtRegistration ?reg }
+}
+GROUP BY ?sdg ?courtLevel
+ORDER BY DESC(?registrations)

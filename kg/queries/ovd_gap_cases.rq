@@ -1,0 +1,20 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+# Worklist for OVD-Info (internal only; the pages named here show defendants' names).
+SELECT ?courtEn ?docket ?registered ?decided ?judgeEn ?outcome (GROUP_CONCAT(DISTINCT ?art; separator=";") AS ?articles) ?nd ?page
+WHERE {
+  ?reg a cl:CourtRegistration ; cl:heldAt ?court ; cl:docketNumber ?docket ; cl:courtListedArticle ?a ; cl:hasOutcome ?o ;
+       cl:defendantCount ?nd ; prov:wasDerivedFrom ?src .
+  ?src prov:atLocation ?page .
+  ?a skos:notation ?art . FILTER(?art IN (POLITICAL))
+  ?court skos:prefLabel ?courtEn . ?o skos:prefLabel ?outcome .
+  OPTIONAL { ?reg cl:registeredOn ?registered } OPTIONAL { ?reg cl:decidedOn ?decided }
+  OPTIONAL { ?reg cl:cardJudge/skos:prefLabel ?judgeEn }
+  FILTER NOT EXISTS { ?l cl:linksRegistration ?reg }
+}
+GROUP BY ?courtEn ?docket ?registered ?decided ?judgeEn ?outcome ?nd ?page
+ORDER BY ?courtEn ?registered

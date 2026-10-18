@@ -1,0 +1,13 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+# Defendants by article and court level, separately for recorded (OVD-Info) and court-listed articles.
+SELECT ?source ?art ?artEn ?level (SUM(?nd) AS ?defendants) WHERE {
+  { ?reg cl:recordedArticle ?a . BIND("recorded" AS ?source) } UNION { ?reg cl:courtListedArticle ?a . BIND("court-listed" AS ?source) }
+  ?reg cl:heldAt ?court ; cl:defendantCount ?nd .
+  ?a skos:notation ?art ; skos:prefLabel ?artEn .
+  ?court a ?level . FILTER(?level != cl:Court)
+} GROUP BY ?source ?art ?artEn ?level ORDER BY ?source DESC(?defendants)

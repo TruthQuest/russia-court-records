@@ -1,0 +1,18 @@
+# NEVER COMMIT: run outputs, cached court pages and anything with defendant names
+work/
+tests/_work/
+tests/_config.yaml
+*.env
+.env*
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
+
+# Source data you supply locally: not redistributable
+Public EN.csv
+*OVD*.csv
+targets.simple.csv
+!tests/fixtures/targets.simple.csv
+*.xlsx
+courtlink_report*.html

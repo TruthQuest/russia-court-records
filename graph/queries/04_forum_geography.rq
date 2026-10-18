@@ -1,0 +1,16 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX o: <http://repressions.russia/ontology/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+# Where people were prosecuted (OVD-Info region) against where they were tried (court seat, inferred cl:trialRegion).
+SELECT ?courtEn (STRAFTER(STR(?courtType), "#") AS ?level) ?recordRegion ?trialRegion (COUNT(DISTINCT ?p) AS ?persecutions)
+WHERE {
+  ?p cl:recordRegion ?rr ; cl:trialRegion ?tr ; cl:hasCourtRegistration ?reg .
+  ?reg cl:heldAt ?court . ?court skos:prefLabel ?courtEn ; a ?courtType . FILTER(?courtType != cl:Court && STRSTARTS(STR(?courtType), STR(cl:)))
+  BIND(STRAFTER(STR(?rr), "region/") AS ?recordRegion) BIND(STRAFTER(STR(?tr), "region/") AS ?trialRegion)
+  FILTER(?rr != ?tr)
+}
+GROUP BY ?courtEn ?courtType ?recordRegion ?trialRegion
+ORDER BY DESC(?persecutions)

@@ -1,0 +1,12 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX o: <http://repressions.russia/ontology/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+# Decided registrations before and after the ECtHR jurisdiction cutoff recorded in your graph, by the ICCPR character of the article.
+SELECT ?character (COUNT(DISTINCT ?reg) AS ?decided) (COUNT(DISTINCT ?after) AS ?afterCutoff)
+WHERE {
+  { SELECT (MIN(?c) AS ?cutoff) WHERE { ?x o:ecthrJurisdictionEnds ?c } }
+  ?reg cl:decidedOn ?d ; cl:mentionsArticle ?art . ?art a ?cls . ?cls rdfs:subClassOf cl:ClassifiedArticle .
+  BIND(STRAFTER(STR(?cls), "#") AS ?character)
+  BIND(IF(?d > ?cutoff, ?reg, ?unbound) AS ?after)
+}
+GROUP BY ?character

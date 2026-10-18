@@ -1,0 +1,11 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX o: <http://repressions.russia/ontology/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+# Fallback for the OWL property chains (used only when Pellet has not been run).
+CONSTRUCT { ?case cl:caseRegistration ?r . ?r cl:sameOVDCaseAs ?r2 . ?p cl:trialRegion ?g . }
+WHERE {
+  { ?p o:partOfCase ?case ; cl:hasCourtRegistration ?r . OPTIONAL { ?p2 o:partOfCase ?case ; cl:hasCourtRegistration ?r2 } }
+  UNION { ?p cl:hasCourtRegistration/cl:heldAt/cl:inRegion ?g }
+}

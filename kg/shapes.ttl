@@ -1,0 +1,47 @@
+@prefix cl:   <https://traceoriginresearch.com/ontology/courtlink#> .
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix org:  <http://www.w3.org/ns/org#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+cl:RegistrationShape a sh:NodeShape ; sh:targetClass cl:CourtRegistration ;
+    sh:property [ sh:path cl:heldAt ; sh:minCount 1 ; sh:maxCount 1 ; sh:class cl:Court ] ;
+    sh:property [ sh:path cl:docketNumber ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path cl:registrationOf ; sh:maxCount 1 ; sh:class cl:Proceeding ] ;
+    sh:property [ sh:path cl:cardJudge ; sh:class cl:JudicialPost ] ;
+    sh:property [ sh:path cl:hasOutcome ; sh:maxCount 1 ; sh:class skos:Concept ] ;
+    sh:property [ sh:path cl:outcomeAsOf ; sh:maxCount 1 ] ;
+    sh:property [ sh:path cl:inCluster ; sh:maxCount 1 ; sh:class cl:CoRegistrationCluster ] ;
+    sh:property [ sh:path prov:wasDerivedFrom ; sh:minCount 1 ; sh:class cl:SourceDocument ;
+                  sh:message "Every registration must cite the page it was read from." ] .
+
+cl:OutcomeTimedShape a sh:NodeShape ; sh:targetSubjectsOf cl:hasOutcome ;
+    sh:property [ sh:path cl:outcomeAsOf ; sh:minCount 1 ; sh:message "An outcome must say when it was observed." ] .
+
+cl:ProceedingShape a sh:NodeShape ; sh:targetClass cl:Proceeding ;
+    sh:property [ sh:path cl:caseUID ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:pattern "^[0-9]{2}[A-Z]{2}[0-9]{4}-[0-9]{2}-[0-9]{4}-[0-9]{6}-[0-9]{2}$" ] .
+
+cl:PostShape a sh:NodeShape ; sh:targetClass cl:JudicialPost ;
+    sh:property [ sh:path org:member ; sh:minCount 1 ; sh:maxCount 1 ; sh:class foaf:Person ] ;
+    sh:property [ sh:path org:organization ; sh:minCount 1 ; sh:maxCount 1 ; sh:class cl:Court ] .
+
+cl:PersonShape a sh:NodeShape ; sh:targetObjectsOf org:member ;
+    sh:property [ sh:path cl:familyName ; sh:minCount 1 ] ;
+    sh:property [ sh:path cl:initials ; sh:minCount 1 ; sh:pattern "^[А-ЯЁ]\\.[А-ЯЁ]\\.$" ] .
+
+cl:ArticleShape a sh:NodeShape ; sh:targetObjectsOf cl:mentionsArticle ;
+    sh:property [ sh:path skos:broader ; sh:maxCount 0 ; sh:message "Criminal Code articles are a flat scheme." ] .
+
+cl:LinkShape a sh:NodeShape ; sh:targetClass cl:RecordRegistrationLink ;
+    sh:property [ sh:path cl:linksRecord ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path cl:linksRegistration ; sh:minCount 1 ; sh:maxCount 1 ; sh:class cl:CourtRegistration ] ;
+    sh:property [ sh:path cl:matchedBy ; sh:minCount 1 ; sh:class cl:MatchingRule ] ;
+    sh:property [ sh:path cl:confidence ; sh:minCount 1 ; sh:in ( "high" "medium" "low" "reviewed" ) ] .
+
+cl:SourceDocumentShape a sh:NodeShape ; sh:targetClass cl:SourceDocument ;
+    sh:property [ sh:path cl:sha256 ; sh:minCount 1 ; sh:pattern "^[0-9a-f]{64}$" ] ;
+    sh:property [ sh:path prov:atLocation ; sh:minCount 1 ] .

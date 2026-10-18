@@ -1,0 +1,111 @@
+# courtlink configuration. Values marked VERIFY are best-known defaults: confirm them with
+# probe.py against a live page before a full run.
+
+ovd_csv: ""                 # path to OVD-Info "Public EN.csv" (or pass --csv)
+ovd_ru_csv: ""              # optional: OVD-Info Russian export, joined on Record ID for Cyrillic names
+work_dir: work              # all outputs, cache, manifest (contains defendant names: never commit)
+
+http:
+  concurrency: 6            # courts queried in parallel; sudrf answers 429 (too many requests) above about this
+  host_delay_s: 3           # gap between requests to the SAME court; one request in flight per court
+  user_agent: "TraceOriginResearch/0.1 (court-records research; contact: ebrattin@traceoriginresearch.com)"
+  min_delay_s: 6            # sync tools only (probe, step 1)
+  jitter_s: 4
+  timeout_s: 40
+  retries: 2
+  max_consecutive_blocks: 3 # 403/429/451 from a host this many times in a row stops that host
+  proxy: ""                 # e.g. http://user:pass@host:port  (see README: legal note)
+  ca_bundle: ""
+  offline: false            # true = cache only, no network
+
+directory:
+  url: https://sudrf.ru/index.php
+  params:                   # VERIFY with: python probe.py dir --subj 66
+    id: "300"
+    act: go_search
+    searchtype: fs
+    court_name: ""
+    court_subj: "{subj}"
+    court_type: "0"
+    court_okrug: "0"
+    vcourt_okrug: "0"
+
+sudrf:
+  param_encoding: cp1251    # sudrf expects Windows-1251 query strings
+  page_encoding: null       # null = detect
+  search_path: /modules.php
+  form_path: "/modules.php?name=sud_delo&srv_num={srv}&name_op=sf&delo_id={delo_id}"
+  srv_num: "1"
+  captcha_ttl_min: 20       # sudrf sessions expire after ~20-24 min idle; rejected answers are re-queued
+  discover_form: false      # field names below were confirmed live on covs.svd.sudrf.ru (Oct 2026)
+  fixed_params:
+    name: sud_delo
+    name_op: r
+    new: "0"
+  instances:                # VERIFY delo_id / table per instance with probe.py form
+    criminal_first:
+      delo_id: "1540006"
+      delo_table: u1_case
+      case_type: "0"
+      docket_field_re: "(?i)^u1_case__case_numberss$"
+      name_field_re: "(?i)^u1_(defendant|parts)__namess$"
+      default_docket_field: u1_case__CASE_NUMBERSS
+      default_name_field: U1_DEFENDANT__NAMESS
+    criminal_appeal:
+      delo_id: "4"
+      delo_table: u2_case
+      case_type: "0"
+      docket_field_re: "(?i)^u2_case__case_numberss$"
+      name_field_re: "(?i)^u2_(defendant|parts)__namess$"
+      default_docket_field: U2_CASE__CASE_NUMBERSS
+      default_name_field: U2_DEFENDANT__NAMESS
+
+sweep:                      # sweep.py: list cases by article at each court (confirmed live Oct 2026)
+  date_from_field: u1_case__ENTRY_DATE1D
+  date_to_field: u1_case__ENTRY_DATE2D
+  page_param: page          # used only if a results page has no numbered page links
+  max_pages: 40             # 25 rows per page
+
+mosgorsud:                  # Moscow district courts and Moscow City Court
+  base: https://mos-gorsud.ru
+  search_path: /search      # VERIFY with: python probe.py form --url https://mos-gorsud.ru/search
+  params:
+    formType: fullForm
+  docket_param: caseNumber
+  name_param: participant
+  extra_params: {}          # e.g. processType for criminal cases once confirmed
+
+candidates:
+  max_courts_per_case: 12
+  stop_on_accept: true
+  # Art. 31 CPC: these go to district military courts at first instance (since 2014)
+  military_articles: ["205", "205.1", "205.2", "205.3", "205.4", "205.5", "206", "208", "211",
+                      "220", "221", "277", "278", "279", "281", "360", "361"]
+  # service-member offences usually heard by garrison military courts
+  garrison_articles: ["332", "334", "335", "336", "337", "338", "339", "340", "341", "342", "344",
+                      "344.1", "352.1"]
+
+matching:                   # see courtlink/scoring.py
+  docket_exact: 5.0
+  docket_prior: 4.0
+  docket_mismatch: -2.0
+  name_strong: 3.0
+  name_weak: 1.5
+  name_conflict: -3.0
+  date_close: 2.0
+  date_near: 0.5
+  date_far: -1.0
+  article: 1.0
+  article_conflict: -3.0
+  accept: 6.0
+  review: 3.0
+  margin: 2.0
+  date_close_days: 7
+  date_near_days: 60
+
+judges:
+  cluster_uid_gap: 10        # consecutive case UIDs within this many numbers + shared article = likely one split investigation (verify on the cards)
+
+sanctions:
+  opensanctions_csv: ""     # https://data.opensanctions.org/datasets/latest/default/targets.simple.csv
+  min_score: 85

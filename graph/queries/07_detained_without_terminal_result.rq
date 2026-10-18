@@ -1,0 +1,14 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX o: <http://repressions.russia/ontology/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+# Persecutions OVD-Info marks as imprisoned with no terminal result on any registration of the same case UID (closed-world rule).
+SELECT ?p ?outcome ?courtEn ?start ?asOf
+WHERE {
+  ?p a cl:DetainedWithoutTerminalResult ; cl:hasCourtRegistration ?reg .
+  ?reg cl:hasOutcome/skos:prefLabel ?outcome ; cl:heldAt/skos:prefLabel ?courtEn .
+  OPTIONAL { ?p o:persecutionStartDate ?start } OPTIONAL { ?reg cl:outcomeAsOf ?asOf }
+}
+ORDER BY ?start

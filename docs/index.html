@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>courtlink: Russian court records, linked</title>
+<meta name="description" content="How Trace Origin linked OVD-Info's records of political prosecutions in Russia to the courts' own case pages, the presiding judges and sanctions lists, using a knowledge graph.">
+<meta property="og:title" content="courtlink: Russian court records, linked">
+<meta property="og:description" content="The method behind No Way Out: court case pages, record linkage, a knowledge graph and sanctions checks, built so that no defendant is exposed.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,50..100&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F1EDE1;--paper:#FBF9F1;--ink:#171412;--mute:#5F564C;--faint:#9A9080;--rule:#C4BBA4;--court:#7C1D1D;--model:#1F3A5F;--amber:#A07A30;--red:#9E2A2A;--blue:#2563A6;--neutral:#DDD5C2}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15130F;--paper:#1D1A16;--ink:#EEE8DB;--mute:#B9AE9C;--faint:#857B6B;--rule:#3A342B;--court:#D27A6E;--model:#8FB0D8;--amber:#D0A65A;--red:#D9726A;--blue:#7AA7E0;--neutral:#3C362D}}
+  :root[data-theme="dark"]{--bg:#15130F;--paper:#1D1A16;--ink:#EEE8DB;--mute:#B9AE9C;--faint:#857B6B;--rule:#3A342B;--court:#D27A6E;--model:#8FB0D8;--amber:#D0A65A;--red:#D9726A;--blue:#7AA7E0;--neutral:#3C362D}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:'Inter',system-ui,sans-serif;font-size:17px;line-height:1.6;color:var(--ink);background:var(--bg)}
+  a{color:var(--model)}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 32px}
+  @media (max-width:700px){.wrap{padding:0 16px}body{font-size:16px}}
+  header.top{background:#171412;color:#FBF9F1;padding:18px 0}
+  header.top .wrap{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+  .brand{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#C4BBA4}
+  .brand b{color:#FBF9F1;font-weight:500}
+  nav a{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.06em;color:#C4BBA4;text-decoration:none;margin-left:18px}
+  nav a:hover{color:#FBF9F1}
+  .hero{padding:80px 0 48px}
+  .kicker{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--court);margin-bottom:20px}
+  h1{font-family:'Fraunces',serif;font-weight:400;font-variation-settings:"SOFT" 30,"opsz" 120;font-size:clamp(40px,6vw,72px);line-height:1.02;letter-spacing:-.02em;max-width:900px}
+  h1 em{font-style:italic;color:var(--court);font-weight:300}
+  .lede{font-family:'Fraunces',serif;font-size:clamp(19px,2.2vw,23px);line-height:1.45;color:var(--mute);max-width:760px;margin-top:28px}
+  .cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
+  .btn{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;padding:12px 18px;border-radius:2px;border:1px solid var(--ink);color:var(--ink)}
+  .btn.primary{background:var(--court);border-color:var(--court);color:#FBF9F1}
+  section{padding:56px 0;border-top:1px solid var(--rule)}
+  .num{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--court);margin-bottom:14px}
+  h2{font-family:'Fraunces',serif;font-weight:400;font-size:clamp(28px,3.6vw,42px);line-height:1.1;letter-spacing:-.015em;margin-bottom:22px;max-width:820px}
+  h3{font-family:'Fraunces',serif;font-weight:500;font-size:22px;margin:32px 0 10px}
+  p{max-width:720px;margin-bottom:16px}
+  .muted{color:var(--mute)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin:24px 0}
+  .card{background:var(--paper);border:1px solid var(--rule);padding:20px 22px}
+  .card .t{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--model);margin-bottom:8px}
+  .card p{font-size:15px;color:var(--mute);margin:0}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin:28px 0}
+  .stat{background:var(--paper);padding:22px}
+  .stat .n{font-family:'Fraunces',serif;font-size:42px;line-height:1;letter-spacing:-.02em}
+  .stat .l{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin-top:10px;line-height:1.55}
+  .fig{background:var(--paper);border:1px solid var(--rule);padding:16px;margin:24px 0 8px;overflow-x:auto}
+  .fig svg{display:block;width:100%;min-width:640px;height:auto}
+  .cap{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mute);line-height:1.6;max-width:820px}
+  table{border-collapse:collapse;width:100%;font-size:14.5px;background:var(--paper);border:1px solid var(--rule)}
+  .tw{overflow-x:auto;margin:20px 0}
+  th{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule)}
+  td{padding:10px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+  td code,p code,li code{font-family:'JetBrains Mono',monospace;font-size:13px;background:var(--bg);padding:1px 5px;border-radius:2px}
+  pre{font-family:'JetBrains Mono',monospace;font-size:13px;background:#171412;color:#EEE8DB;padding:18px 20px;overflow-x:auto;border-radius:2px;margin:16px 0;line-height:1.55}
+  ul.ticks{list-style:none;max-width:760px}
+  ul.ticks li{padding:12px 0 12px 30px;border-bottom:1px solid var(--rule);position:relative}
+  ul.ticks li::before{content:"";position:absolute;left:4px;top:20px;width:10px;height:10px;border-radius:50%;background:var(--model)}
+  ul.ticks li strong{color:var(--ink)}
+  .note{border-left:3px solid var(--court);background:var(--paper);padding:16px 20px;max-width:760px;color:var(--mute);font-size:15px;margin:20px 0}
+  footer{padding:48px 0 64px;border-top:1px solid var(--rule);font-size:14px;color:var(--mute)}
+  .t-ink{fill:var(--ink)} .t-mute{fill:var(--mute)} .t-faint{fill:var(--faint)}
+  .s-rule{stroke:var(--rule)} .s-ink{stroke:var(--mute)}
+  .f-paper{fill:var(--paper)} .f-bg{fill:var(--bg)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="brand"><b>courtlink</b> &middot; Trace Origin LLC</div>
+  <nav><a href="#method">Method</a><a href="#graph">Graph</a><a href="#findings">Findings</a><a href="#privacy">Privacy</a><a href="#run">Run it</a><a href="https://github.com/TruthQuest/russia-court-records">Code</a></nav>
+</div></header>
+
+<main class="wrap">
+<div class="hero">
+  <div class="kicker">The method behind <em>No Way Out</em></div>
+  <h1>Who decides Russia's political cases? <em>The courts' own records say.</em></h1>
+  <p class="lede">courtlink links the people OVD-Info documents as politically prosecuted in Russia to their court cases, to the judges who presided, and to international sanctions lists. It reads the courts' public case pages, matches them to OVD-Info's records, and builds everything into a knowledge graph that can be tested as a whole.</p>
+  <div class="cta">
+    <a class="btn primary" href="https://www.traceoriginresearch.com/no-way-out-how-russias-courts-convict-almost-everyone-charged-for-speaking-against-the-war/">Read the report &rarr;</a>
+    <a class="btn" id="code-link" href="https://github.com/TruthQuest/russia-court-records">View the code</a>
+  </div>
+</div>
+
+<section id="question">
+  <div class="num">01 &middot; The question</div>
+  <h2>OVD-Info knows who was prosecuted. The courts know who judged them.</h2>
+  <p>OVD-Info has documented thousands of people prosecuted in Russia for what they said, wrote or believed: who was charged, under which article, and what happened to them. Its records rarely say which judge decided the case, and they cannot say what the courts handle that no one has reported yet.</p>
+  <p>Russian courts publish that information themselves. Every court of general jurisdiction keeps a public page for each case, with the case identifier, the presiding judge, every hearing and custody decision, and the result for each defendant. courtlink reads those pages at scale and joins them to OVD-Info's records.</p>
+</section>
+
+<section id="method">
+  <div class="num">02 &middot; How it works</div>
+  <h2>From a person's record to a judge's name, with a saved page behind every link.</h2>
+  <div class="grid">
+    <div class="card"><div class="t">Court case pages</div><p>Each court's own website in the sudrf.ru system (GAS "Pravosudie"). Searched by article and registration year; every page saved with its retrieval time and a SHA-256 checksum.</p></div>
+    <div class="card"><div class="t">Court directory</div><p>About 2,300 court websites by region, from Dataout's sudrfparser (CC BY-SA 4.0).</p></div>
+    <div class="card"><div class="t">OVD-Info records</div><p>The people, articles, dates and docket numbers to match. Used with permission; never redistributed.</p></div>
+    <div class="card"><div class="t">Sanctions lists</div><p>OpenSanctions' consolidated EU, UK, US, Ukrainian and other lists, checked against every judge.</p></div>
+  </div>
+
+  <div class="fig" role="img" aria-label="Pipeline diagram">
+  <svg viewBox="0 0 960 330" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+    <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9A9080"/></marker></defs>
+    <g font-size="13">
+      <g><rect x="20" y="40" width="150" height="58" rx="3" class="f-bg s-rule" stroke-width="1"/><text x="95" y="66" text-anchor="middle" class="t-ink" font-weight="600">OVD-Info records</text><text x="95" y="85" text-anchor="middle" class="t-mute" font-size="11.5">people, articles, dockets</text></g>
+      <g><rect x="20" y="150" width="150" height="58" rx="3" class="f-bg s-rule" stroke-width="1"/><text x="95" y="176" text-anchor="middle" class="t-ink" font-weight="600">Court directory</text><text x="95" y="195" text-anchor="middle" class="t-mute" font-size="11.5">~2,300 court sites</text></g>
+      <g><rect x="220" y="95" width="160" height="58" rx="3" fill="#1F3A5F"/><text x="300" y="121" text-anchor="middle" fill="#FBF9F1" font-weight="600">Search the courts</text><text x="300" y="140" text-anchor="middle" fill="#C9D6E6" font-size="11.5">by article and year</text></g>
+      <g><rect x="430" y="40" width="150" height="58" rx="3" class="f-bg s-rule" stroke-width="1"/><text x="505" y="66" text-anchor="middle" class="t-ink" font-weight="600">Match</text><text x="505" y="85" text-anchor="middle" class="t-mute" font-size="11.5">rules R1 to R7</text></g>
+      <g><rect x="430" y="150" width="150" height="58" rx="3" class="f-bg s-rule" stroke-width="1"/><text x="505" y="176" text-anchor="middle" class="t-ink" font-weight="600">Court census</text><text x="505" y="195" text-anchor="middle" class="t-mute" font-size="11.5">every case, not just OVD's</text></g>
+      <g><rect x="630" y="95" width="150" height="58" rx="3" class="f-bg s-rule" stroke-width="1"/><text x="705" y="121" text-anchor="middle" class="t-ink" font-weight="600">Case pages</text><text x="705" y="140" text-anchor="middle" class="t-mute" font-size="11.5">judge, events, outcome</text></g>
+      <g><rect x="820" y="95" width="120" height="58" rx="3" fill="#7C1D1D"/><text x="880" y="121" text-anchor="middle" fill="#FBF9F1" font-weight="600">Knowledge</text><text x="880" y="140" text-anchor="middle" fill="#FBF9F1" font-weight="600">graph</text></g>
+      <g><rect x="630" y="240" width="150" height="58" rx="3" class="f-bg s-rule" stroke-width="1"/><text x="705" y="266" text-anchor="middle" class="t-ink" font-weight="600">Sanctions check</text><text x="705" y="285" text-anchor="middle" class="t-mute" font-size="11.5">OpenSanctions</text></g>
+      <g><rect x="800" y="240" width="140" height="58" rx="3" class="f-bg s-rule" stroke-width="1"/><text x="870" y="266" text-anchor="middle" class="t-ink" font-weight="600">Analyses</text><text x="870" y="285" text-anchor="middle" class="t-mute" font-size="11.5">tested on synthetic data</text></g>
+    </g>
+    <g stroke="#9A9080" stroke-width="1.5" fill="none" marker-end="url(#a)">
+      <path d="M170,69 C195,69 195,110 218,112"/><path d="M170,179 C195,179 195,140 218,138"/>
+      <path d="M380,112 C405,112 405,72 428,70"/><path d="M380,138 C405,138 405,176 428,178"/>
+      <path d="M580,69 C605,69 605,112 628,114"/><path d="M580,179 C605,179 605,140 628,138"/>
+      <path d="M780,124 L818,124"/><path d="M880,153 L880,238"/><path d="M820,150 C760,190 720,200 705,238"/>
+    </g>
+  </svg>
+  </div>
+  <p class="cap">Phase 1 starts from OVD-Info's records and looks for each one in the courts. Phase 2, the census, lists every case the courts register under the relevant articles, so OVD-Info's records can be measured against the courts' own total.</p>
+
+  <h3>Matching without guessing</h3>
+  <p>A docket number is unique only within one court, so it is never enough on its own. Each candidate is scored on docket, surname (the Cyrillic name transliterated and fuzzy-matched), decision date and article, then decided by the first explicit rule that applies. Every link records the rule and its confidence.</p>
+  <div class="tw"><table>
+    <tr><th>Rule</th><th>Evidence</th><th>Confidence</th></tr>
+    <tr><td>exclusions</td><td>different article; a different named defendant</td><td>reject</td></tr>
+    <tr><td>R1</td><td>docket + surname (similarity 90 or more)</td><td>high</td></tr>
+    <tr><td>R2</td><td>docket + article + decision within 7 days of OVD-Info's date</td><td>high</td></tr>
+    <tr><td>R3</td><td>docket + decision within 7 days</td><td>high</td></tr>
+    <tr><td>R4</td><td>docket + weaker surname match</td><td>medium</td></tr>
+    <tr><td>R5</td><td>docket + article</td><td>medium</td></tr>
+    <tr><td>R6</td><td>docket only</td><td>low</td></tr>
+    <tr><td>R7</td><td>no docket: surname, plus article and/or date</td><td>high or medium</td></tr>
+  </table></div>
+</section>
+
+<section id="graph">
+  <div class="num">03 &middot; The knowledge graph</div>
+  <h2>The court case is the hub. Every statement points back to a saved page.</h2>
+  <p>The graph is built against the CourtLink ontology (OWL 2), validated with SHACL, and joined to Trace Origin's wider graph of OVD-Info records. Reasoning uses property chains, defined classes and a closed-world step after inference.</p>
+  <div class="fig" role="img" aria-label="Data model diagram">
+  <svg viewBox="0 0 960 300" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif" font-size="13">
+    <defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9A9080"/></marker></defs>
+    <g stroke="#9A9080" stroke-width="1.4" fill="none" marker-end="url(#b)">
+      <path d="M200,70 L388,132"/><path d="M560,150 L720,150"/><path d="M475,175 L475,228"/><path d="M560,135 L720,75"/><path d="M760,95 L760,128"/><path d="M200,230 L388,165"/>
+    </g>
+    <g font-family="JetBrains Mono, monospace" font-size="11" class="t-mute">
+      <text x="230" y="88">linked to (rule, confidence)</text>
+      <text x="590" y="168">registered at</text>
+      <text x="485" y="208">derived from</text>
+      <text x="600" y="92">presided by</text>
+      <text x="770" y="115">post at</text>
+      <text x="215" y="215">same person?</text>
+    </g>
+    <g><rect x="40" y="42" width="160" height="56" rx="28" class="f-bg s-rule" stroke-width="1"/><text x="120" y="68" text-anchor="middle" class="t-ink" font-weight="600">OVD-Info record</text><text x="120" y="86" text-anchor="middle" class="t-mute" font-size="11">a documented person</text></g>
+    <g><rect x="390" y="122" width="170" height="56" rx="4" fill="#7C1D1D"/><text x="475" y="146" text-anchor="middle" fill="#FBF9F1" font-weight="600">Court case</text><text x="475" y="164" text-anchor="middle" fill="#F3D9D4" font-size="11">identified by УИД</text></g>
+    <g><rect x="722" y="122" width="200" height="56" rx="4" class="f-bg s-rule" stroke-width="1"/><text x="822" y="146" text-anchor="middle" class="t-ink" font-weight="600">Court registration</text><text x="822" y="164" text-anchor="middle" class="t-mute" font-size="11">docket at a court</text></g>
+    <g><rect x="722" y="40" width="200" height="56" rx="4" class="f-bg s-rule" stroke-width="1"/><text x="822" y="64" text-anchor="middle" class="t-ink" font-weight="600">Judicial post</text><text x="822" y="82" text-anchor="middle" class="t-mute" font-size="11">a judge at one court, dated</text></g>
+    <g><rect x="390" y="230" width="170" height="56" rx="4" class="f-bg s-rule" stroke-width="1"/><text x="475" y="254" text-anchor="middle" class="t-ink" font-weight="600">Saved source page</text><text x="475" y="272" text-anchor="middle" class="t-mute" font-size="11">SHA-256, time retrieved</text></g>
+    <g><rect x="40" y="202" width="160" height="56" rx="28" class="f-bg s-rule" stroke-width="1"/><text x="120" y="228" text-anchor="middle" class="t-ink" font-weight="600">Sanctions entry</text><text x="120" y="246" text-anchor="middle" class="t-mute" font-size="11">a lead, never sameAs</text></g>
+  </svg>
+  </div>
+  <ul class="ticks">
+    <li><strong>The case identifier (УИД)</strong> is assigned when the first material reaches a court and follows the case when it is sent elsewhere or refiled, so a case is counted once.</li>
+    <li><strong>Records and cases are linked, not merged.</strong> Each link carries the rule and confidence that made it.</li>
+    <li><strong>Judges are posts, not people.</strong> The same name at two courts is a possible match (<code>cl:possiblySameAs</code>), never <code>owl:sameAs</code>.</li>
+    <li><strong>Every outcome is dated</strong> and classed as terminal (verdict, dismissal, compulsory medical measures) or interim (returned, transferred, pending).</li>
+    <li><strong>Two kinds of article</strong>, the one OVD-Info records and the one the court lists, are kept apart so disagreements stay visible.</li>
+  </ul>
+</section>
+
+<section id="analyses">
+  <div class="num">04 &middot; Analyses</div>
+  <h2>Each method is tested on planted signals before it touches real data.</h2>
+  <div class="tw"><table>
+    <tr><th>Question</th><th>Method</th></tr>
+    <tr><td>Are cases concentrated among a few judges?</td><td>Concentration curves per court type; year-stratified Monte Carlo against each court's own assignment; Benjamini–Hochberg correction.</td></tr>
+    <tr><td>Were related cases handled as a group?</td><td>A scan over windows of consecutive case identifiers at each court, with receipt dates and a shared article, scored against random placement.</td></tr>
+    <tr><td>Do some judges' case pages record one uniform sequence?</td><td>Each case reduced to its recorded events; permutation test within court and article group (1,000 reassignments).</td></tr>
+    <tr><td>Is dismissal rare because the law forbids it, or because it is not used?</td><td>Outcomes by article part and gravity, single-charge defendants, decision year, trials in absentia and the recorded grounds of each dismissal.</td></tr>
+    <tr><td>How complete are OVD-Info's records?</td><td>The court census against OVD-Info: docket links plus a surname, initial, region, article and date check, with name-match recall measured on docket-linked cases.</td></tr>
+    <tr><td>Do judges match a sanctions listing?</td><td>Surname blocking, initials and patronymic checks, and whether the listing describes a judge. Every match is a lead for human review.</td></tr>
+  </table></div>
+</section>
+
+<section id="findings">
+  <div class="num">05 &middot; What it found</div>
+  <h2>From 3,487 first-instance cases, as of October 2026.</h2>
+  <div class="stats">
+    <div class="stat"><div class="n">1 of 2,302</div><div class="l">acquitted in the district military courts</div></div>
+    <div class="stat"><div class="n">4 of 136</div><div class="l">dismissed where the charge permits it</div></div>
+    <div class="stat"><div class="n">963</div><div class="l">military-court cases where 205.2 is the only charge</div></div>
+    <div class="stat"><div class="n">15 of 22</div><div class="l">280.4 defendants with no OVD-Info record found</div></div>
+  </div>
+  <p class="muted">All district military courts nationally, plus district and regional courts in 23 regions. Nine judges match an EU listing that describes a judge and 32 more share a full name with a person on Ukraine's sanctions register; all are unconfirmed leads. The report sets out what these findings do not establish. Read it before citing any number.</p>
+  <p><a href="https://www.traceoriginresearch.com/no-way-out-how-russias-courts-convict-almost-everyone-charged-for-speaking-against-the-war/">Read No Way Out &rarr;</a></p>
+</section>
+
+<section id="privacy">
+  <div class="num">06 &middot; Privacy and ethics</div>
+  <h2>Built so the analysis can be shared without exposing anyone.</h2>
+  <ul class="ticks">
+    <li><strong>No defendant data in the repository.</strong> Every run output goes to a local folder that is never committed. A privacy check blocks any commit or push containing run outputs, OVD-Info's export, a real case-page link or a real case identifier.</li>
+    <li><strong>Names are not written.</strong> The census and case-detail steps record counts and roles, never the names of defendants, lawyers or victims.</li>
+    <li><strong>Published outputs omit anything that leads to a person:</strong> no case numbers, no case-page links, no small counts. A fuller workbook goes to OVD-Info only.</li>
+    <li><strong>Captchas are solved by a person,</strong> on one page, never automatically.</li>
+    <li><strong>Gentle on the courts:</strong> one request at a time per court, a pause between requests, and a cache so no page is fetched twice.</li>
+    <li><strong>Judges are named only from the courts' own records,</strong> in their official capacity. A sanctions match is a lead, not an identification.</li>
+    <li><strong>Collection code on request only.</strong> The code that gathers data from the courts goes to named human rights organisations, journalists and researchers, each copy marked so it can be traced.</li>
+    <li><strong>Report misuse.</strong> If you see this code used to identify or target people, write to <a href="mailto:ebrattin@traceoriginresearch.com">ebrattin@traceoriginresearch.com</a>. Reports are kept confidential.</li>
+  </ul>
+</section>
+
+<section id="run">
+  <div class="num">07 &middot; Run it</div>
+  <h2>Everything can be tested offline on invented data.</h2>
+  <pre>git clone https://github.com/TruthQuest/russia-court-records.git
+cd russia-court-records
+python -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -r requirements.txt
+bash scripts/install_hooks.sh
+python tests/check_analyses.py
+python tests/check_graph_analytics.py</pre>
+  <p>The public repository holds the matching, the knowledge graph, the analyses and their tests, all runnable on synthetic data with no network. A live run needs OVD-Info's export, which is not public, and the data-collection code.</p>
+  <h3 id="access">Getting the data-collection code</h3>
+  <p>The code that searches the court websites and downloads case pages, with its end-to-end test and the full operating guide, is available to human rights organisations, journalists and researchers on request: <a href="mailto:ebrattin@traceoriginresearch.com?subject=courtlink%20data-collection%20code">ebrattin@traceoriginresearch.com</a>. Please say who you are, which organisation you work with, and what you want to use it for. Each copy is issued to a named person or organisation and marked so it can be traced.</p>
+  <div class="note"><strong>Limits.</strong> A case page shows what the court's staff entered: a missing entry is not a hearing that did not happen. Courts withhold some pages and names. Moscow, magistrate and garrison courts are outside the main search. Links between records and cases are automatic and should be checked by hand on a sample before any figure is cited.</div>
+</section>
+</main>
+
+<footer><div class="wrap">
+  <p>Built by Eric Brattin, <a href="https://www.traceoriginresearch.com/">Trace Origin LLC</a>. Corrections and questions: <a href="mailto:ebrattin@traceoriginresearch.com">ebrattin@traceoriginresearch.com</a>.</p>
+  <p>Licence: <a href="https://github.com/TruthQuest/russia-court-records" id="license-link">courtlink Human Rights Non-Commercial License 1.0</a>. For human rights work by non-profit organisations, defenders, lawyers, journalists and researchers; no commercial use; never to prosecute, surveil or target the people in these cases.</p>
+  <p>Court directory: Dataout, <a href="https://github.com/dataout-org/sudrfparser">sudrfparser</a> (CC BY-SA 4.0). Sanctions data: <a href="https://www.opensanctions.org/">OpenSanctions</a>. Political prosecution records: <a href="https://ovd.info/">OVD-Info</a>, used with permission.</p>
+</div></footer>
+<script>
+  // Point the code links at this repository when served from GitHub Pages (<account>.github.io/<repo>/).
+  try {
+    var h = location.hostname, p = location.pathname.split('/').filter(Boolean);
+    if (h.endsWith('github.io') && p.length) {
+      var repo = 'https://github.com/' + h.split('.')[0] + '/' + p[0];
+      document.querySelectorAll('a[href="https://github.com/TruthQuest/russia-court-records"]:not(#license-link)').forEach(function (a) { a.href = repo; });
+      var lk = document.getElementById('license-link'); if (lk) lk.href = repo + '/blob/main/LICENSE.md';
+    }
+  } catch (e) {}
+</script>
+</body>
+</html>

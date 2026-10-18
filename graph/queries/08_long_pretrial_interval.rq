@@ -1,0 +1,15 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX o: <http://repressions.russia/ontology/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+# Registrations whose case UID was opened two or more years before the docket year (cl:LongPreTrialInterval). The UID dates
+# from the first material to reach a court, so the interval is mostly investigation: it does not measure the court phase.
+SELECT ?courtEn ?docket ?uid ?uidKind ?uidYear ?docketYear ?outcome
+WHERE {
+  ?reg a cl:LongPreTrialInterval ; cl:heldAt/skos:prefLabel ?courtEn ; cl:docketNumber ?docket ; cl:docketYear ?docketYear ;
+       cl:registrationOf ?pr ; cl:hasOutcome/skos:prefLabel ?outcome .
+  ?pr cl:caseUID ?uid ; cl:uidYear ?uidYear ; cl:uidKind ?uidKind .
+}
+ORDER BY ?courtEn ?docket

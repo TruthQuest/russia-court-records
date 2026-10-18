@@ -1,0 +1,20 @@
+PREFIX cl: <https://traceoriginresearch.com/ontology/courtlink#>
+PREFIX o: <http://repressions.russia/ontology/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+# OVD-Info criminal cases that the courts hold as more than one registration (uses the inferred chain cl:caseRegistration).
+SELECT ?case ?caseLabel (COUNT(DISTINCT ?reg) AS ?registrations) (COUNT(DISTINCT ?court) AS ?courts)
+       (COUNT(DISTINCT ?post) AS ?judges) (COUNT(DISTINCT ?member) AS ?ovdDefendants)
+       (GROUP_CONCAT(DISTINCT ?docket; separator=", ") AS ?dockets)
+WHERE {
+  ?case cl:caseRegistration ?reg .
+  ?reg cl:heldAt ?court ; cl:docketNumber ?docket .
+  OPTIONAL { ?reg cl:cardJudge ?post }
+  ?member o:partOfCase ?case .
+  OPTIONAL { ?case rdfs:label ?caseLabel FILTER(lang(?caseLabel) = "en") }
+}
+GROUP BY ?case ?caseLabel
+HAVING (COUNT(DISTINCT ?reg) > 1)
+ORDER BY DESC(?registrations)
